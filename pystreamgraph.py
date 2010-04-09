@@ -16,7 +16,8 @@
 # 
 # Full licence is in the file COPYING and at http://www.gnu.org/copyleft/gpl.html
 
-import svgfig 
+import random
+import svgfig
 
 class StreamGraph:
   """A class to generate a kind of data vizulazation called 'stream graphs'
@@ -41,6 +42,7 @@ class StreamGraph:
   y_max = 0             # The maximun (stacked) y value for the whole dataset
   x_min = 0             # The smallest x vaule in the dataset 
   x_max = 0             # The largets x vaule in the dataset
+  canvas_aspect = 0     # Aspect Ratio of the canvas (image)
 
   def __init__(self, data, colors = None, labels = None):
     self.data = data
@@ -58,6 +60,7 @@ class StreamGraph:
     
     # Preprocess some stuff
     aspect_ratio = float(width) / float(height)
+    self.canvas_aspect = aspect_ratio
     x_offset = int( -((100 * aspect_ratio) - 100) / 2.0 )
 
     # Get a g_0 depending in desired shape
@@ -112,8 +115,11 @@ class StreamGraph:
       poly = svgfig.Poly(points, "smooth", stroke="#eeeeee", fill=self.rgb2hex(self.colors[layer]), stroke_width="0.05")
       graph.append(poly.SVG(window))
       if show_labels:
-        label = self.placeLabel(points, layer)
-        labels.append(label.SVG(window))
+        #label = self.placeLabel(points, layer)
+        #label = self.test_placeLabel(points, layer)
+        label = self.test2_placeLabel(points, layer, window)
+        for l in label:
+          labels.append(l)
     # End Loop
 
     # Add objects to the canvas and save it
@@ -181,6 +187,127 @@ class StreamGraph:
     scale_height = (self.y_max / 40.0)
     return svgfig.Text(placement_x, placement_y, label, fill="#cccccc", font_size=str(height / scale_height), font_family="Droid Sans")
     #return svgfig.Rect(placement_x1, placement_y1, placement_x2, placement_y2, fill="#cccccc", fill_opacity="50%", stroke_width="0") 
+
+  def test_placeLabel(self, points, layer):
+    """Use this for testing different packing algorthims.
+    """
+    
+    # Get the label
+    label = self.labels[layer]
+
+    # Take a guess at the aspect ratio of the word
+    label_aspect = len(label) * 0.7  #magic
+
+    window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
+
+    iterations = 20
+    end_of_line = (len(points) / 2)
+    point_range = range(len(points))
+    point_range.reverse()
+    for i in range(0, end_of_line - 1):
+      bottom_point = point_range[i]
+      x = points[i][0]
+      y = points[i][1]
+      y_0 = points[bottom_point][1]
+      height_init = y_0 - y
+      for i in range(iterations):
+        height = height_init - (i * (height_init / iterations))
+        width = height / (label_aspect / window_aspect)
+     
+    yint = 6
+    x = points[yint][0]
+    y = points[yint][1]
+    y_0 = points[point_range[yint]][1]
+    height = y - y_0
+    width = height / (label_aspect / window_aspect / self.canvas_aspect)
+    
+    x1 = x
+    y1 = y_0
+    x2 = x1 + width
+    y2 = y
+
+    return svgfig.Rect(x1, y1, x2, y2, fill="#cccccc", fill_opacity="50%", stroke_width="0") 
+
+  def test2_placeLabel(self, points, layer, window):
+
+    def interp(a,b,val):
+      slope = float(b[1] - a[1]) / float(b[0] - a[0])
+      inter = a[1] - slope * a[0]
+      return (val * slope) + inter
+
+    def f_bl(x):
+      point_range = range(len(points))
+      point_range.reverse()
+      last_x = 0
+      for i in range(len(points) / 2):
+        point = points[point_range[i]]
+        #print str(point[0]) + "  " +str(x) + "  " + str(last_x)
+        if x <= point[0] and x > last_x:
+          #print "Bang!"
+          return interp(point, points[point_range[i - 1]], x)
+        last_x = point[0]
+      return 0
+
+    def f_tl(x):
+      last_x = 0
+      for i in range(len(points) / 2):
+        point = points[i]
+        if x <= point[0] and x > last_x:
+          return interp(point, points[i - 1], x)
+        last_x = point[0]
+      return 0
+
+    def is_box_in_shape(x1, y1, x2, y2):
+      width = x2 - x1
+      for j in range(resolution):
+        x = x1 + ((width / float(resolution)) * j)
+        y_lo = f_bl(x)
+        y_hi = f_tl(x)
+        if y1 < y_lo or y2 > y_hi:
+          return False
+      return True
+
+    # Get the label
+    label = self.labels[layer]
+    # Take a guess at the aspect ratio of the word
+    #label_aspect = len(label) * 0.7  #magic
+    label_aspect = 2.4
+    window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
+
+    num_guesses = 500
+    resolution = 20
+    
+    total_aspect = (label_aspect / window_aspect / self.canvas_aspect)
+
+    print "layer"
+    height_max = 0
+    boxes = svgfig.SVG("g", id="boxes")
+    x1_l = 0
+    x2_l = 0
+    y1_l = 0
+    y2_l = 0
+    for i in range(num_guesses):
+      x1 = random.uniform(self.x_min,self.x_max)
+      y_lo = f_bl(x1)
+      y_hi = f_tl(x1)
+      h = y_hi - y_lo
+      y1 = random.uniform(y_lo, y_hi - (h/8.0))
+      y2 = random.uniform(y1,y_hi)
+      height = y2 - y1
+      x2 = x1 +  height / float(total_aspect)
+      if is_box_in_shape(x1, y1, x2, y2):
+        if height_max < height:
+          height_max = height
+          x1_l = x1
+          y1_l = y1
+          x2_l = x2
+          y2_l = y2
+        boxes.append(svgfig.Rect(x1,y1,x2,y2,fill="#eeeeee", fill_opacity="15%", stroke_width="0").SVG(window))
+
+    boxes.append(svgfig.Rect(x1_l,y1_l,x2_l,y2_l,fill="#eeaaaa", fill_opacity="50%", stroke_width="0").SVG(window))
+    return boxes
+    #return svgfig.Rect(bounds[0], bounds[1], bounds[2], bounds[3], fill="#cccccc", fill_opacity="50%", stroke_width="0")
+
 
   ## Begin Graph types 
 
