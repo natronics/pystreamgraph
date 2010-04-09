@@ -113,7 +113,7 @@ class StreamGraph:
       graph.append(poly.SVG(window))
       if show_labels:
         label = self.placeLabel(points, layer)
-        #labels.append(label.SVG(window))
+        labels.append(label.SVG(window))
     # End Loop
 
     # Add objects to the canvas and save it
@@ -135,44 +135,52 @@ class StreamGraph:
 
     # Get the label
     label = self.labels[layer]
-    print label
 
     # Take a guess at the aspect ratio of the word
     aspect_ratio = 0
     aspect_ratio = len(label) * 0.7  #magic
-    iterations = 20
+   
+    max_area = 0
+    max_area_x = 0
+    max_area_y = 0
 
-    # Try and fit a rectangle in the shape
-    """
-        x1,y2a               x2,y2b
-        +-------------------+
-        |                   |
-        |                   |
-        |                   |
-        +-------------------+
-        x1,y1a               x2,y1b
-    """
-    for p in range(len(points)/2 - 1):
-      x1 = points[p][0]         # Bottom Point
-      y1a = points[-(p+1)][1]    # Bottom Point
-      y2a = points[p][1]         # Top Point
-      y1b = points[-(p+2)][1]
-      y2b = points[p + 1][1] 
-      x2 = points[p + 1][0]
-      x_iter = float(x2 - x1) / float(iterations)
-      previous_height = y2a - y1a
-      for i in range(iterations):
-        x1p = x1 + x_iter*i
-        y1p = interp((x1,y1a), (x2,y1b), x1p)
-        y2p = interp((x1,y2a), (x2,y2b), x1p)
-        height = y2p - y1p
-        height_prime = height - previous_height
-        print str(x1p) + "," + str(height) + "," + str(height_prime)
-        previous_height = height
-        
-    
+    end_of_line = (len(points) / 2)
+    point_range = range(len(points))
+    point_range.reverse()
+    for i in range(1, end_of_line - 1):
+      bottom_point = point_range[i]
+      x = points[i][0]
+      y = points[i][1]
+      y_0 = points[bottom_point][1]
+      xm1 = points[i - 1][0]
+      ym1 = points[i - 1][1]
+      ym1_0 = points[bottom_point + 1][1]
+      xp1 = points[i + 1][0]
+      yp1 = points[i + 1][1]
+      yp1_0 = points[bottom_point - 1][1]
+      height = y - y_0
+      heightm1 = ym1 - ym1_0
+      width = xp1 - x
+      widthm1 = x - xm1
+      area = (widthm1 * heightm1) + (height * height)
+      if max_area < area: 
+        max_area = area
+        max_area_index = i
+        max_area_index_0 = bottom_point
 
-    return svgfig.Rect(0,5,0,2, fill="#cccccc", fill_opacity="50%") 
+
+    placement_x1 = points[max_area_index - 1][0]
+    placement_x2 = points[max_area_index + 1][0]
+    width = placement_x2 - placement_x1
+    placement_x = points[max_area_index][0]
+    placement_y1 = points[max_area_index_0][1]
+    placement_y2 = points[max_area_index][1]
+    height = placement_y2 - placement_y1
+    placement_y = placement_y1 + (height * 0.3)
+
+    scale_height = (self.y_max / 40.0)
+    return svgfig.Text(placement_x, placement_y, label, fill="#cccccc", font_size=str(height / scale_height), font_family="Droid Sans")
+    #return svgfig.Rect(placement_x1, placement_y1, placement_x2, placement_y2, fill="#cccccc", fill_opacity="50%", stroke_width="0") 
 
   ## Begin Graph types 
 
