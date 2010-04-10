@@ -118,10 +118,11 @@ class StreamGraph:
       if show_labels:
         #label = self.placeLabel(points, layer)
         #label = self.test_placeLabel(points, layer)
-        label = self.test2_placeLabel(points, layer, window)
-        for l in label:
-          labels.append(l)
-        labels.append(self.current_label.SVG(window))
+        #label = self.test2_placeLabel(points, layer, window)
+        label = self.placeLabel2(points, layer)
+        #for l in label:
+        #  labels.append(l)
+        labels.append(label.SVG(window))
     # End Loop
 
     # Add objects to the canvas and save it
@@ -274,8 +275,8 @@ class StreamGraph:
     label_aspect = len(label) * 0.7  #magic
     window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
 
-    num_guesses = 600
-    resolution = 20
+    num_guesses = 400
+    resolution = 10
    
     total_aspect = (((1 / label_aspect) / window_aspect) * self.canvas_aspect)
 
@@ -302,9 +303,9 @@ class StreamGraph:
           y1_l = y1
           x2_l = x2
           y2_l = y2
-        boxes.append(svgfig.Rect(x1,y1,x2,y2,fill="#eeeeee", fill_opacity="15%", stroke_width="0").SVG(window))
+        boxes.append(svgfig.Rect(x1,y1,x2,y2,fill="#eeeeee", fill_opacity="10%", stroke_width="0").SVG(window))
 
-    boxes.append(svgfig.Rect(x1_l,y1_l,x2_l,y2_l,fill="#eeaaaa", fill_opacity="50%", stroke_width="0").SVG(window))
+    boxes.append(svgfig.Rect(x1_l,y1_l,x2_l,y2_l,fill="#eeeeee", fill_opacity="23%", stroke_width="0").SVG(window))
 
     label_x = x1_l + ((x2_l - x1_l) / 2.0)
     label_y = y1_l + ((y2_l - y1_l) / 6.0)
@@ -313,6 +314,86 @@ class StreamGraph:
     self.current_label = svgfig.Text(label_x, label_y, label, font_family="Droid Sans", font_size=str(font))
     
     return boxes
+    
+  def placeLabel2(self, points, layer):
+
+    def interp(a,b,val):
+      slope = float(b[1] - a[1]) / float(b[0] - a[0])
+      inter = a[1] - slope * a[0]
+      return (val * slope) + inter
+
+    def f_bl(x):
+      point_range = range(len(points))
+      point_range.reverse()
+      last_x = 0
+      for i in range(len(points) / 2):
+        point = points[point_range[i]]
+        #print str(point[0]) + "  " +str(x) + "  " + str(last_x)
+        if x <= point[0] and x > last_x:
+          #print "Bang!"
+          return interp(point, points[point_range[i - 1]], x)
+        last_x = point[0]
+      return 0
+
+    def f_tl(x):
+      last_x = 0
+      for i in range(len(points) / 2):
+        point = points[i]
+        if x <= point[0] and x > last_x:
+          return interp(point, points[i - 1], x)
+        last_x = point[0]
+      return 0
+
+    def is_box_in_shape(x1, y1, x2, y2):
+      width = x2 - x1
+      for j in range(resolution):
+        x = x1 + ((width / float(resolution)) * j)
+        y_lo = f_bl(x)
+        y_hi = f_tl(x)
+        if y1 < y_lo or y2 > y_hi:
+          return False
+      return True
+      
+    # Get the label
+    label = self.labels[layer]
+    # Take a guess at the aspect ratio of the word
+    label_aspect = len(label) * 0.7  #magic
+    window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
+    total_aspect = (((1 / label_aspect) / window_aspect) * self.canvas_aspect)
+    
+    # How slow vs. how good
+    num_guesses = 400
+    resolution = 12
+   
+    height_max = 0
+    boxes = svgfig.SVG("g", id="boxes")
+    x1_l = 0
+    x2_l = 0
+    y1_l = 0
+    y2_l = 0
+    for i in range(num_guesses):
+      x1 = random.uniform(self.x_min,self.x_max)
+      y_lo = f_bl(x1)
+      y_hi = f_tl(x1)
+      h = y_hi - y_lo
+      y1 = random.uniform(y_lo, y_hi - (h/8.0))
+      y2 = random.uniform(y1,y_hi)
+      height = y2 - y1
+      x2 = x1 +  height / float(total_aspect)
+      if is_box_in_shape(x1, y1, x2, y2):
+        if height_max < height:
+          height_max = height
+          x1_l = x1
+          y1_l = y1
+          x2_l = x2
+          y2_l = y2
+          
+    label_x = x1_l + ((x2_l - x1_l) / 2.0)
+    label_y = y1_l + ((y2_l - y1_l) / 6.0)
+    font = ((y2_l - y1_l) / 2.5) #magic
+    label = svgfig.Text(label_x, label_y, label, font_family="Droid Sans", font_size=str(font), fill="#e7e7e7")
+    
+    return label
 
   ## Begin Graph types 
 
