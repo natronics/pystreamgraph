@@ -43,6 +43,7 @@ class StreamGraph:
   x_min = 0             # The smallest x vaule in the dataset 
   x_max = 0             # The largets x vaule in the dataset
   canvas_aspect = 0     # Aspect Ratio of the canvas (image)
+  current_label = svgfig.Text(0,0," ")
 
   def __init__(self, data, colors = None, labels = None):
     self.data = data
@@ -120,6 +121,7 @@ class StreamGraph:
         label = self.test2_placeLabel(points, layer, window)
         for l in label:
           labels.append(l)
+        labels.append(self.current_label.SVG(window))
     # End Loop
 
     # Add objects to the canvas and save it
@@ -266,20 +268,18 @@ class StreamGraph:
         if y1 < y_lo or y2 > y_hi:
           return False
       return True
-
     # Get the label
     label = self.labels[layer]
     # Take a guess at the aspect ratio of the word
-    #label_aspect = len(label) * 0.7  #magic
-    label_aspect = 2.4
+    label_aspect = len(label) * 0.7  #magic
     window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
 
-    num_guesses = 500
+    num_guesses = 600
     resolution = 20
-    
-    total_aspect = (label_aspect / window_aspect / self.canvas_aspect)
+   
+    total_aspect = (((1 / label_aspect) / window_aspect) * self.canvas_aspect)
 
-    print "layer"
+    
     height_max = 0
     boxes = svgfig.SVG("g", id="boxes")
     x1_l = 0
@@ -305,9 +305,14 @@ class StreamGraph:
         boxes.append(svgfig.Rect(x1,y1,x2,y2,fill="#eeeeee", fill_opacity="15%", stroke_width="0").SVG(window))
 
     boxes.append(svgfig.Rect(x1_l,y1_l,x2_l,y2_l,fill="#eeaaaa", fill_opacity="50%", stroke_width="0").SVG(window))
-    return boxes
-    #return svgfig.Rect(bounds[0], bounds[1], bounds[2], bounds[3], fill="#cccccc", fill_opacity="50%", stroke_width="0")
 
+    label_x = x1_l + ((x2_l - x1_l) / 2.0)
+    label_y = y1_l + ((y2_l - y1_l) / 6.0)
+    #print (y2_l - y1_l)
+    font = ((y2_l - y1_l) / 2.5) #magic
+    self.current_label = svgfig.Text(label_x, label_y, label, font_family="Droid Sans", font_size=str(font))
+    
+    return boxes
 
   ## Begin Graph types 
 
