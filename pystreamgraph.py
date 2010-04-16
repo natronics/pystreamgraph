@@ -88,9 +88,9 @@ class StreamGraph:
     window = svgfig.window(self.x_min, self.x_max, 0, self.y_max * 1.3, x_offset, y_offset, int(100 * aspect_ratio), 100)
 
     # Loop through each layer
-    for layer in range(0, self.n_layers):
+    for layer in range(self.n_layers):
       points = []
-      point_range = range(0, self.n_points)
+      point_range = range(self.n_points)
       # Forwards; draw top of the shape
       for i in point_range:
         x = self.data[layer][i][0]
@@ -98,7 +98,7 @@ class StreamGraph:
         # Start with g_0 and stack
         y_stacked = g_0[i] + y
         # Stack!
-        for l in range(0, layer):
+        for l in range(layer):
           y_stacked += self.data[l][i][1]
         # Add the points to the shape
         points.append((x, y_stacked))
@@ -109,7 +109,7 @@ class StreamGraph:
         # This time we don't include this layer
         y_stacked = g_0[i]
         # Stack!
-        for l in range(0, layer):
+        for l in range(layer):
           y_stacked += self.data[l][i][1]
         points.append((x,y_stacked))
       # Shapes  
@@ -362,8 +362,8 @@ class StreamGraph:
     total_aspect = (((1 / label_aspect) / window_aspect) * self.canvas_aspect)
     
     # How slow vs. how good
-    num_guesses = 400
-    resolution = 12
+    num_guesses = 500
+    resolution = 15
    
     height_max = 0
     boxes = svgfig.SVG("g", id="boxes")
@@ -389,8 +389,9 @@ class StreamGraph:
           y2_l = y2
           
     label_x = x1_l + ((x2_l - x1_l) / 2.0)
-    label_y = y1_l + ((y2_l - y1_l) / 6.0)
-    font = ((y2_l - y1_l) / 2.5) #magic
+    label_y = y1_l + ((y2_l - y1_l) / 6.5)
+    font_scale = self.y_max / 100.0
+    font = ((y2_l - y1_l) / font_scale) * 0.9 #magic
     label = svgfig.Text(label_x, label_y, label, font_family="Droid Sans", font_size=str(font), fill="#e7e7e7")
     
     return label
