@@ -21,7 +21,7 @@ class Stream(object):
         self.data = data
         self.colors = colors
         self.labels = labels
-        self.preprocess()
+        self._preprocess()
 
 
     def draw(self, filename, graphshape = None, width = 1280, height = 720, show_labels = False):
@@ -30,9 +30,9 @@ class Stream(object):
         shape of the graph. It then it prints a stacked graph on top of that bottom 
         line, whatever shape it is.  
         """
-        
+
         # Preprocess some stuff
-        aspect_ratio = float(width) / float(height)
+        aspect_ratio = width / float(height)
         self.canvas_aspect = aspect_ratio
         x_offset = int( -((100 * aspect_ratio) - 100) / 2.0 )
 
@@ -453,22 +453,26 @@ class Stream(object):
 
       ## Begin Utilities 
 
-    def preprocess(self):
-        """Goes through the dataset at the beginning and figures out things so we
-        don't have to calcualte them again later.
-        """
+    def _preprocess(self):
+
         # Lengths for ranges
         self.n_layers = len(self.data)
         self.n_points = len(self.data[0])
+        self.y_extent = []
+        self.y_max = 0
+
+        for l in self.data:
+            if len(l) != self.n_points:
+                raise(Exception('All rows of data must have equal length data'))
 
         # Calculate the sum of the y values for each point
         for i in range(0, self.n_points):
-          y_sum = 0
-          for layer in range(0, self.n_layers):
-            y_sum += self.data[layer][i][1]
-          self.y_extent.append(y_sum)
-          if self.y_max < y_sum : self.y_max = y_sum
-        
+            y_sum = 0
+            for layer in range(0, self.n_layers):
+                y_sum += self.data[layer][i][1]
+            self.y_extent.append(y_sum)
+        self.y_max = max(self.y_extent)
+
         # Range of x vaules, assuming in order.
         self.x_min = self.data[0][0][0]
         self.x_max = self.data[0][-1][0]
