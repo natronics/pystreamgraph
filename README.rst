@@ -2,6 +2,9 @@
 pystreamgraph
 =============
 
+.. image:: https://travis-ci.org/natronics/pystreamgraph.svg
+    :target: https://travis-ci.org/natronics/pystreamgraph
+
 pystreamgraph's goal is to provide a simple way to generate *stream graphs*
 using python.  The user is expected to provide formated data (a list of a list 
 of tuples) and colors and labels. The engine will then print out an svg of the 
