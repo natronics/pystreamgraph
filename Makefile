@@ -25,7 +25,7 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 openrocketdoc tests
+	flake8 pystreamgraph tests
 
 test:
 	python setup.py test
@@ -34,15 +34,15 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source openrocketdoc setup.py test
+	coverage run --source pystreamgraph setup.py test
 	coverage report -m
 	coverage html
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/openrocketdoc.rst
+	rm -f docs/pystreamgraph.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ openrocketdoc
+	sphinx-apidoc -o docs/ pystreamgraph
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html

@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 import random
 
 
 class Stream(object):
     """A class to generate a kind of data vizulazation called 'stream graphs'
-    Based on the paper "Stacked Graphs - Geometry & Aesthetics" by Lee Byron & 
+    Based on the paper "Stacked Graphs - Geometry & Aesthetics" by Lee Byron &
     Martin Wattenberg
 
     In general there are two things to consider:
@@ -12,7 +14,6 @@ class Stream(object):
     These two things will determine the shape and look of the graph.
 
     :param list data: A list of equal length lists of numbers
-
     :returns a Stream() instance:
 
     """
@@ -23,34 +24,33 @@ class Stream(object):
         self.labels = labels
         self._preprocess()
 
-
-    def draw(self, filename, graphshape = None, width = 1280, height = 720, show_labels = False):
+    def draw(self, filename, graphshape=None, width=1280, height=720, show_labels=False):
         """This does the drawing. It starts by getting a function for the bottom
         most layer. As descrbed in Byron & Wattenberg this will control the overall
-        shape of the graph. It then it prints a stacked graph on top of that bottom 
-        line, whatever shape it is.  
+        shape of the graph. It then it prints a stacked graph on top of that bottom
+        line, whatever shape it is.
         """
 
         # Preprocess some stuff
         aspect_ratio = width / float(height)
         self.canvas_aspect = aspect_ratio
-        x_offset = int( -((100 * aspect_ratio) - 100) / 2.0 )
+        x_offset = int(-((100 * aspect_ratio) - 100) / 2.0)
 
         # Get a g_0 depending in desired shape
-        g_0 = self.themeRiver() # Default (fallbacks)
+        g_0 = self.themeRiver()  # Default (fallbacks)
         y_offset = 0
-        if str(graphshape) == "Stacked_Graph" : 
-          g_0 = self.stackedGraph()
-          y_offset = 0
-        if str(graphshape) == "Theme_River" : 
-          g_0 = self.themeRiver()
-          y_offset = -50
-        if str(graphshape) == "Wiggle" : 
-          g_0 = self.wiggle()
-          y_offset = -50
-        if str(graphshape) == "Weighted_Wiggle" : 
-          g_0 = self.weighted_wiggle()
-          y_offset = -50
+        if str(graphshape) == "Stacked_Graph":
+            g_0 = self.stackedGraph()
+            y_offset = 0
+        if str(graphshape) == "Theme_River":
+            g_0 = self.themeRiver()
+            y_offset = -50
+        if str(graphshape) == "Wiggle":
+            g_0 = self.wiggle()
+            y_offset = -50
+        if str(graphshape) == "Weighted_Wiggle":
+            g_0 = self.weighted_wiggle()
+            y_offset = -50
 
         """
         # Initilize a streamgraph groups in SVG.
@@ -85,7 +85,7 @@ class Stream(object):
             for l in range(layer):
               y_stacked += self.data[l][i][1]
             points.append((x,y_stacked))
-          # Shapes  
+          # Shapes
           poly = svgfig.Poly(points, "smooth", stroke="#eeeeee", fill=self.rgb2hex(self.colors[layer]), stroke_width="0.05")
           graph.append(poly.SVG(window))
           if show_labels:
@@ -106,23 +106,24 @@ class Stream(object):
         """
 
     def placeLabel(self, points, layer):
-        """Brute Force method to calculate a position for the labels. No other way 
+        """Brute Force method to calculate a position for the labels. No other way
         to do it except by hand.
         Starts by modeling the label as a rectangle, then tries to fit the rectangle
         in the current stream by making the box bigger and bigger
         """
-        def interp(a,b,val):
-          slope = float(b[1] - a[1]) / float(b[0] - a[0])
-          inter = a[1] - slope * a[0]
-          return (val * slope) + inter
+
+        def interp(a, b, val):
+            slope = float(b[1] - a[1]) / float(b[0] - a[0])
+            inter = a[1] - slope * a[0]
+            return (val * slope) + inter
 
         # Get the label
         label = self.labels[layer]
 
         # Take a guess at the aspect ratio of the word
         aspect_ratio = 0
-        aspect_ratio = len(label) * 0.7  #magic
-       
+        aspect_ratio = len(label) * 0.7   # magic
+
         max_area = 0
         max_area_x = 0
         max_area_y = 0
@@ -131,26 +132,25 @@ class Stream(object):
         point_range = range(len(points))
         point_range.reverse()
         for i in range(1, end_of_line - 1):
-          bottom_point = point_range[i]
-          x = points[i][0]
-          y = points[i][1]
-          y_0 = points[bottom_point][1]
-          xm1 = points[i - 1][0]
-          ym1 = points[i - 1][1]
-          ym1_0 = points[bottom_point + 1][1]
-          xp1 = points[i + 1][0]
-          yp1 = points[i + 1][1]
-          yp1_0 = points[bottom_point - 1][1]
-          height = y - y_0
-          heightm1 = ym1 - ym1_0
-          width = xp1 - x
-          widthm1 = x - xm1
-          area = (widthm1 * heightm1) + (height * height)
-          if max_area < area: 
-            max_area = area
-            max_area_index = i
-            max_area_index_0 = bottom_point
-
+            bottom_point = point_range[i]
+            x = points[i][0]
+            y = points[i][1]
+            y_0 = points[bottom_point][1]
+            xm1 = points[i - 1][0]
+            ym1 = points[i - 1][1]
+            ym1_0 = points[bottom_point + 1][1]
+            xp1 = points[i + 1][0]
+            yp1 = points[i + 1][1]
+            yp1_0 = points[bottom_point - 1][1]
+            height = y - y_0
+            heightm1 = ym1 - ym1_0
+            width = xp1 - x
+            widthm1 = x - xm1
+            area = (widthm1 * heightm1) + (height * height)
+            if max_area < area:
+                max_area = area
+                max_area_index = i
+                max_area_index_0 = bottom_point
 
         placement_x1 = points[max_area_index - 1][0]
         placement_x2 = points[max_area_index + 1][0]
@@ -163,17 +163,17 @@ class Stream(object):
 
         scale_height = (self.y_max / 40.0)
         #return svgfig.Text(placement_x, placement_y, label, fill="#cccccc", font_size=str(height / scale_height), font_family="Droid Sans")
-        #return svgfig.Rect(placement_x1, placement_y1, placement_x2, placement_y2, fill="#cccccc", fill_opacity="50%", stroke_width="0") 
+        #return svgfig.Rect(placement_x1, placement_y1, placement_x2, placement_y2, fill="#cccccc", fill_opacity="50%", stroke_width="0")
 
     def test_placeLabel(self, points, layer):
         """Use this for testing different packing algorthims.
         """
-        
+
         # Get the label
         label = self.labels[layer]
 
         # Take a guess at the aspect ratio of the word
-        label_aspect = len(label) * 0.7  #magic
+        label_aspect = len(label) * 0.7   # magic
 
         window_aspect = (self.x_max - self.x_min) / float(self.y_max * 1.3)
 
@@ -182,57 +182,57 @@ class Stream(object):
         point_range = range(len(points))
         point_range.reverse()
         for i in range(0, end_of_line - 1):
-          bottom_point = point_range[i]
-          x = points[i][0]
-          y = points[i][1]
-          y_0 = points[bottom_point][1]
-          height_init = y_0 - y
-          for i in range(iterations):
-            height = height_init - (i * (height_init / iterations))
-            width = height / (label_aspect / window_aspect)
-         
+            bottom_point = point_range[i]
+            x = points[i][0]
+            y = points[i][1]
+            y_0 = points[bottom_point][1]
+            height_init = y_0 - y
+            for i in range(iterations):
+                height = height_init - (i * (height_init / iterations))
+                width = height / (label_aspect / window_aspect)
+
         yint = 6
         x = points[yint][0]
         y = points[yint][1]
         y_0 = points[point_range[yint]][1]
         height = y - y_0
         width = height / (label_aspect / window_aspect / self.canvas_aspect)
-        
+
         x1 = x
         y1 = y_0
         x2 = x1 + width
         y2 = y
 
-        #return svgfig.Rect(x1, y1, x2, y2, fill="#cccccc", fill_opacity="50%", stroke_width="0") 
+        #return svgfig.Rect(x1, y1, x2, y2, fill="#cccccc", fill_opacity="50%", stroke_width="0")
 
     def test2_placeLabel(self, points, layer, window):
 
-        def interp(a,b,val):
-          slope = float(b[1] - a[1]) / float(b[0] - a[0])
-          inter = a[1] - slope * a[0]
-          return (val * slope) + inter
+        def interp(a, b, val):
+            slope = float(b[1] - a[1]) / float(b[0] - a[0])
+            inter = a[1] - slope * a[0]
+            return (val * slope) + inter
 
         def f_bl(x):
-          point_range = range(len(points))
-          point_range.reverse()
-          last_x = 0
-          for i in range(len(points) / 2):
-            point = points[point_range[i]]
-            #print str(point[0]) + "  " +str(x) + "  " + str(last_x)
-            if x <= point[0] and x > last_x:
-              #print "Bang!"
-              return interp(point, points[point_range[i - 1]], x)
-            last_x = point[0]
-          return 0
+            point_range = range(len(points))
+            point_range.reverse()
+            last_x = 0
+            for i in range(len(points) / 2):
+                point = points[point_range[i]]
+                #print str(point[0]) + "  " +str(x) + "  " + str(last_x)
+                if x <= point[0] and x > last_x:
+                    #print "Bang!"
+                    return interp(point, points[point_range[i - 1]], x)
+                last_x = point[0]
+            return 0
 
         def f_tl(x):
-          last_x = 0
-          for i in range(len(points) / 2):
-            point = points[i]
-            if x <= point[0] and x > last_x:
-              return interp(point, points[i - 1], x)
-            last_x = point[0]
-          return 0
+            last_x = 0
+            for i in range(len(points) / 2):
+                point = points[i]
+                if x <= point[0] and x > last_x:
+                    return interp(point, points[i - 1], x)
+                last_x = point[0]
+            return 0
 
         def is_box_in_shape(x1, y1, x2, y2):
           width = x2 - x1
